@@ -28,7 +28,9 @@ app.use(express.json({ limit: '1mb' }));
 
 // Database connection
 connectDB();
-
+app.get('/', (req, res) => {
+  res.send('backend is well');
+});
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
