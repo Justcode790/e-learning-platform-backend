@@ -8,22 +8,36 @@ const {
   deleteCourse,
   addLesson,
   addFeedback,
-  enrollToCourse
+  enrollToCourse,
+  getCourseOfTeacher,
+  uploadThumbnail,
+  uploadVideo
 } = require('../controllers/coursesController');
+
+
 const Student = require('../models/Student');
 const Course = require('../models/Course');
+const upload = require('../middleware/upload');
+
 
 const router = Router();
 
 router.get('/', listCourses);
+router.get('/my-courses', authRequired, requireRole('teacher'),getCourseOfTeacher);
 router.get('/:id', getCourseById);
 router.post('/', authRequired, requireRole('teacher'), createCourse);
+// Upload thumbnail for a course
+router.post('/:id/thumbnail', authRequired, requireRole('teacher'), upload.single('thumbnail'), uploadThumbnail);
+
+// Upload a video and add it as a lesson
+router.post('/:id/lessons/upload', authRequired, requireRole('teacher'), upload.single('video'), uploadVideo);
+
 router.put('/:id', authRequired, requireRole('teacher'), updateCourse);
 router.delete('/:id', authRequired, requireRole('teacher'), deleteCourse);
 router.post('/:id/lessons', authRequired, requireRole('teacher'), addLesson);
 router.post('/:id/feedback', authRequired, requireRole('student'), addFeedback);
 
 // 🆕 ENROLL / PURCHASE ROUTE
-router.post('/:id/enroll', authRequired, requireRole('student'), enrollToCourse);
+router.post('/:userId/enroll/:id', authRequired, requireRole('student'), enrollToCourse);
 
 module.exports = router;

@@ -25,6 +25,7 @@ const courseSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     description: { type: String, default: '' },
     category: { type: String, default: 'General' },
+    thumbnailUrl:{type:String},
     price: { type: Number, default: 0 },
     instructor: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
     lessons: [lessonSchema],

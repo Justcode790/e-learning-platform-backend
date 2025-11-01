@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const teacherRoutes = require('./routes/teachers');
 const studentRoutes = require('./routes/students');
 const courseRoutes = require('./routes/courses');
+const uploadRoutes = require("./routes/upload");
 const { errorHandler } = require('./middleware/errorHandler');
 
 dotenv.config();
@@ -31,6 +32,8 @@ connectDB();
 app.get('/', (req, res) => {
   res.send('backend is well');
 });
+
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -41,6 +44,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/media', uploadRoutes);
 
 // Error handler
 app.use(errorHandler);
