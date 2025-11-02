@@ -91,6 +91,7 @@ async function getMyCourses(req, res) {
         .populate('studentsEnrolled', 'name regNumber email')
         .populate('lessons') // assuming lessons is a ref array
         .sort({ createdAt: -1 });
+        // console.log(courses);
     } 
     else if (userRole === 'student') {
       // ✅ Get student and populate enrolled courses with instructor & lessons
@@ -207,6 +208,31 @@ async function createCourse(req, res, next) {
 }
 
 
+async function updateLesson(req, res) {
+  const { courseId, lessonId } = req.params;
+  const updates = req.body;
+  const course = await Course.findById(courseId);
+  if (!course) return res.status(404).json({ message: 'Course not found' });
+
+  const lesson = course.lessons.id(lessonId);
+  if (!lesson) return res.status(404).json({ message: 'Lesson not found' });
+
+  Object.assign(lesson, updates);
+  await course.save();
+  res.json({ success: true, lesson });
+}
+
+async function deleteLesson(req, res) {
+  const { courseId, lessonId } = req.params;
+  const course = await Course.findById(courseId);
+  if (!course) return res.status(404).json({ message: 'Course not found' });
+
+  course.lessons.id(lessonId).remove();
+  await course.save();
+  res.json({ success: true });
+}
+
+
 
 
 async function updateCourse(req, res, next) {
@@ -267,4 +293,4 @@ async function addFeedback(req, res, next) {
   }
 }
 
-module.exports = { listCourses, getCourseById, createCourse, updateCourse, deleteCourse, addLesson, addFeedback,enrollToCourse,getMyCourses,uploadThumbnail ,uploadVideo};
+module.exports = { listCourses, getCourseById, createCourse, updateCourse, deleteCourse, addLesson, addFeedback,enrollToCourse,getMyCourses,uploadThumbnail ,uploadVideo,updateLesson, deleteLesson};

@@ -11,7 +11,7 @@ const {
   enrollToCourse,
   getMyCourses,
   uploadThumbnail,
-  uploadVideo
+  uploadVideo,updateLesson, deleteLesson
 } = require('../controllers/coursesController');
 
 
@@ -23,7 +23,7 @@ const upload = require('../middleware/upload');
 const router = Router();
 
 router.get('/', listCourses);
-router.get('/my-courses', authRequired, requireRole('teacher'),getMyCourses);
+router.get('/my-courses', authRequired,getMyCourses);
 router.get('/:id', getCourseById);
 router.post('/', authRequired, requireRole('teacher'), createCourse);
 router.post('/:id/thumbnail', authRequired, requireRole('teacher'), upload.single('thumbnail'), uploadThumbnail);
@@ -32,6 +32,10 @@ router.put('/:id', authRequired, requireRole('teacher'), updateCourse);
 router.delete('/:id', authRequired, requireRole('teacher'), deleteCourse);
 router.post('/:id/lessons', authRequired, requireRole('teacher'), addLesson);
 router.post('/:id/feedback', authRequired, requireRole('student'), addFeedback);
+
+router.put('/:courseId/lessons/:lessonId', authRequired, requireRole('teacher'), updateLesson);
+router.delete('/:courseId/lessons/:lessonId', authRequired, requireRole('teacher'), deleteLesson);
+
 
 // 🆕 ENROLL / PURCHASE ROUTE
 router.post('/:userId/enroll/:id', authRequired, requireRole('student'), enrollToCourse);
