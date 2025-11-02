@@ -37,19 +37,41 @@ const uploadVideo = async (req, res) => {
   }
 }
 
-
-async function getCourseOfTeacher(req,res){
+async function getMyCourses(req, res) {
   try {
-    const teacherId = req.user.id; // comes from JWT payload
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
-    const courses = await Course.find({ instructor: teacherId })
-      .populate('instructor', 'name email')
-      .sort({ createdAt: -1 });
+    let courses = [];
 
-    res.json(courses);
+    if (userRole === 'teacher') {
+      // ✅ Get courses taught by the teacher
+      courses = await Course.find({ instructor: userId })
+        .populate('instructor', 'name email')
+        .sort({ createdAt: -1 });
+    } 
+    else if (userRole === 'student') {
+      // ✅ Get student and populate enrolled courses
+      const student = await Student.findById(userId)
+        .populate({
+          path: 'enrolledCourses',
+          populate: { path: 'instructor', select: 'name email' },
+        });
+
+      if (!student) {
+        return res.status(404).json({ success: false, message: 'Student not found' });
+      }
+
+      courses = student.enrolledCourses;
+    } 
+    else {
+      return res.status(403).json({ success: false, message: 'Invalid role' });
+    }
+
+    res.json({ success: true, courses });
   } catch (error) {
-    console.error('Error fetching teacher courses:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching user courses:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 }
 
@@ -195,4 +217,4 @@ async function addFeedback(req, res, next) {
   }
 }
 
-module.exports = { listCourses, getCourseById, createCourse, updateCourse, deleteCourse, addLesson, addFeedback,enrollToCourse,getCourseOfTeacher,uploadThumbnail ,uploadVideo};
+module.exports = { listCourses, getCourseById, createCourse, updateCourse, deleteCourse, addLesson, addFeedback,enrollToCourse,getMyCourses,uploadThumbnail ,uploadVideo};
