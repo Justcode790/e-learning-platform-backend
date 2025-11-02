@@ -123,30 +123,89 @@ async function register(req, res, next) {
 }
 
 // ✅ Login route
+// async function login(req, res, next) {
+//   try {
+//     const { email, password, role } = req.body;
+//     console.log(req.body);
+//     if (!email || !password || !role) {
+//       return res.status(400).json({ success: false, message: 'Missing fields' });
+//     }
+
+//     const Model = role === 'teacher' ? Teacher : Student;
+//     const user = await Model.findOne({ email });
+    
+//     if (!user) {
+//       return res.status(400).json({ success: false, message: 'Invalid credentials' });
+//     }
+    
+//     const isMatch = await bcrypt.compare(password, user.password);
+//     if (!isMatch) {
+//       return res.status(400).json({ success: false, message: 'Invalid credentials' });
+//     }
+    
+//     const token = signToken(user._id, user.role);
+//     console.log("user from login:  ",user)
+
+//     res.json({
+//       success: true,
+//       message: 'Login successful',
+//       token,
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         role: user.role,
+//       },
+//     });
+
+//   } catch (err) {
+//     console.error('Login error:', err);
+//     next(err);
+//   }
+// }
+
+
 async function login(req, res, next) {
   try {
     const { email, password, role } = req.body;
-    console.log(req.body);
-    if (!email || !password || !role) {
-      return res.status(400).json({ success: false, message: 'Missing fields' });
+    console.log('🟢 Login Attempt:', req.body);
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password required' });
     }
 
-    const Model = role === 'teacher' ? Teacher : Student;
-    const user = await Model.findOne({ email });
-    
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    let user, detectedRole = role;
+    if (role === 'teacher') {
+      user = await Teacher.findOne({ email });
+    } else if (role === 'student') {
+      user = await Student.findOne({ email });
     }
-    
+
+    // ✅ Auto-detect role if user not found in chosen model
+    if (!user) {
+      user = await Teacher.findOne({ email }) || await Student.findOne({ email });
+      if (user) detectedRole = user.role || (user instanceof Teacher ? 'teacher' : 'student');
+    }
+
+    if (!user) {
+      console.log('❌ No user found for email:', email);
+      return res.status(400).json({ success: false, message: 'Invalid credentials (user not found)' });
+    }
+
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+      console.log('❌ Password mismatch for user:', email);
+      return res.status(400).json({ success: false, message: 'Invalid credentials (wrong password)' });
     }
-    
-    const token = signToken(user._id, user.role);
-    console.log("user from login:  ",user)
 
-    res.json({
+    // Sign JWT
+    const token = signToken(user._id, detectedRole);
+
+    // Success
+    console.log(`✅ ${detectedRole.toUpperCase()} logged in:`, user.email);
+
+    return res.json({
       success: true,
       message: 'Login successful',
       token,
@@ -154,13 +213,13 @@ async function login(req, res, next) {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: detectedRole,
       },
     });
 
   } catch (err) {
     console.error('Login error:', err);
-    next(err);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 }
 
@@ -169,7 +228,7 @@ async function me(req, res, next) {
   try {
     const { id, role } = req.user;
     const Model = role === 'teacher' ? Teacher : Student;
-
+    console.log(Model);
     const user = await Model.findById(id).select('-password');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });

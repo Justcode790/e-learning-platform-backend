@@ -37,6 +37,46 @@ const uploadVideo = async (req, res) => {
   }
 }
 
+// async function getMyCourses(req, res) {
+//   try {
+//     const userId = req.user.id;
+//     const userRole = req.user.role;
+
+//     let courses = [];
+
+//     if (userRole === 'teacher') {
+//       // ✅ Get courses taught by the teacher
+//       courses = await Course.find({ instructor: userId })
+//         .populate('instructor', 'name email')
+//         .populate()
+//         .sort({ createdAt: -1 });
+//     } 
+//     else if (userRole === 'student') {
+//       // ✅ Get student and populate enrolled courses
+//       const student = await Student.findById(userId)
+//         .populate({
+//           path: 'enrolledCourses',
+//           populate: { path: 'instructor', select: 'name email' },
+//         });
+
+//       if (!student) {
+//         return res.status(404).json({ success: false, message: 'Student not found' });
+//       }
+
+//       courses = student.enrolledCourses;
+//     } 
+//     else {
+//       return res.status(403).json({ success: false, message: 'Invalid role' });
+//     }
+
+//     res.json({ success: true, courses });
+//   } catch (error) {
+//     console.error('Error fetching user courses:', error);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// }
+
+
 async function getMyCourses(req, res) {
   try {
     const userId = req.user.id;
@@ -45,17 +85,22 @@ async function getMyCourses(req, res) {
     let courses = [];
 
     if (userRole === 'teacher') {
-      // ✅ Get courses taught by the teacher
+      // ✅ Get courses taught by the teacher with full details
       courses = await Course.find({ instructor: userId })
         .populate('instructor', 'name email')
+        .populate('studentsEnrolled', 'name regNumber email')
+        .populate('lessons') // assuming lessons is a ref array
         .sort({ createdAt: -1 });
     } 
     else if (userRole === 'student') {
-      // ✅ Get student and populate enrolled courses
+      // ✅ Get student and populate enrolled courses with instructor & lessons
       const student = await Student.findById(userId)
         .populate({
           path: 'enrolledCourses',
-          populate: { path: 'instructor', select: 'name email' },
+          populate: [
+            { path: 'instructor', select: 'name email' },
+            { path: 'lessons' },
+          ],
         });
 
       if (!student) {
@@ -74,6 +119,8 @@ async function getMyCourses(req, res) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }
+
+
 
 async function enrollToCourse(req, res){
   console.log(req.params);
@@ -140,19 +187,22 @@ async function getCourseById(req, res, next) {
 
 async function createCourse(req, res, next) {
   try {
-    const { title, description, category, price } = req.body;
-    if (!title) return res.status(400).json({ message: 'Title is required' });
-    const course = await Course.create({
+    const { title, description, category, price, thumbnailUrl, lessons } = req.body;
+
+    const newCourse = await Course.create({
       title,
       description,
       category,
       price,
+      thumbnailUrl,
+      lessons,
       instructor: req.user.id,
-      lessons: []
     });
-    res.status(201).json(course);
-  } catch (err) {
-    next(err);
+
+    res.status(201).json({ success: true, course: newCourse });
+  } catch (error) {
+    console.error('Error creating course:', error);
+    res.status(500).json({ success: false, message: 'Course creation failed' });
   }
 }
 

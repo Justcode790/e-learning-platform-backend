@@ -1,23 +1,27 @@
 const express = require('express');
-const router = express.Router();
 const upload = require('../middleware/upload');
 
-// Route for uploading both image and video
-router.post('/upload', upload.single('file'), async (req, res) => {
+const router = express.Router();
+
+// POST /api/upload
+router.post('/', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
 
-    const fileUrl = req.file.path; // Cloudinary URL
-    const fileType = req.file.mimetype.startsWith('video') ? 'video' : 'image';
-
-    res.json({
+    res.status(200).json({
       success: true,
-      fileType,
-      url: fileUrl
+      url: req.file.path, // Cloudinary URL is automatically added here
+      resourceType: req.file.mimetype.startsWith('video') ? 'video' : 'image',
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Upload failed', error: error.message });
+    console.error('Cloudinary upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Upload failed',
+      error: error.message,
+    });
   }
 });
 
