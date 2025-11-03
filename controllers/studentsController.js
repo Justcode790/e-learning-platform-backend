@@ -87,6 +87,71 @@ async function enrollInCourse(req, res, next) {
   }
 }
 
+// ===========================
+// Wishlist Handlers
+// ===========================
+async function addToWishlist(req, res, next) {
+  try {
+    const { id, courseId } = req.params; // student id, course id
+    if (req.user.id !== id) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
 
+    const course = await Course.findById(courseId).select('_id');
+    if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
 
-module.exports = { getStudentById, updateStudent, enrollInCourse };
+    const updated = await Student.findByIdAndUpdate(
+      id,
+      { $addToSet: { wishlist: courseId } },
+      { new: true }
+    ).select('-password');
+
+    res.json({ success: true, wishlist: updated.wishlist });
+  } catch (err) {
+    console.error('Error adding to wishlist:', err);
+    next(err);
+  }
+}
+
+async function removeFromWishlist(req, res, next) {
+  try {
+    const { id, courseId } = req.params;
+    if (req.user.id !== id) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const updated = await Student.findByIdAndUpdate(
+      id,
+      { $pull: { wishlist: courseId } },
+      { new: true }
+    ).select('-password');
+
+    res.json({ success: true, wishlist: updated.wishlist });
+  } catch (err) {
+    console.error('Error removing from wishlist:', err);
+    next(err);
+  }
+}
+
+async function getWishlist(req, res, next) {
+  try {
+    const { id } = req.params;
+    console.log("getwishlist data: "+id)
+    if (req.user.id !== id) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+
+    const student = await Student.findById(id)
+      .select('wishlist')
+      .populate({ path: 'wishlist', select: 'title category price instructor thumbnailUrl', populate: { path: 'instructor', select: 'name' } });
+
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+
+    res.json({ success: true, wishlist: student.wishlist });
+  } catch (err) {
+    console.error('Error fetching wishlist:', err);
+    next(err);
+  }
+}
+
+module.exports = { getStudentById, updateStudent, enrollInCourse, addToWishlist, removeFromWishlist, getWishlist };

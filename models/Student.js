@@ -17,7 +17,8 @@ const studentSchema = new mongoose.Schema(
     profilePic:{type:String},
     role: { type: String, default: 'student', enum: ['student'] },
     enrolledCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
-    progress: [progressSchema]
+    progress: [progressSchema],
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }]
   },
   { timestamps: true }
 );

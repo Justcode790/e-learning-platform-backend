@@ -25,8 +25,12 @@ app.use(helmet());
 app.use(morgan('dev'));
 
 // Body parsing
-app.use(express.json({ limit: '1mb' }));
-
+app.use(express.json());
+require('./models/Teacher');
+require('./models/Student');
+require('./models/Lesson');
+require('./models/Feedback');
+require('./models/Course');
 // Database connection
 connectDB();
 app.get('/', (req, res) => {
