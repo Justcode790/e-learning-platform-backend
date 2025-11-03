@@ -417,7 +417,6 @@ async function deleteCourse(req, res, next) {
   }
 }
 
-// Recommend up to 5 courses not yet enrolled by the student, based on categories of enrolled courses
 async function getRecommendedCourses(req, res) {
   try {
     const { studentId } = req.params;
